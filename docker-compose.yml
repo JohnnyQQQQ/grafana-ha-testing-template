@@ -1,0 +1,86 @@
+version: "3.4"
+
+services:
+
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_DATABASE: grafana
+    ports:
+        - "3306:3306"
+    healthcheck:
+      test: ["CMD", 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-p$$MYSQL_ROOT_PASSWORD' ]
+      timeout: 20s
+      retries: 10
+
+  redis:
+    image: redis:latest
+    ports: 
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      timeout: 20s
+      retries: 10
+
+  grafana-1:
+    image: grafana/grafana-oss:dev  
+    ports:
+      - "3001:3000"
+    volumes:
+      - "./grafana-1.ini:/etc/grafana/grafana.ini"
+      - "./contactpoints.yaml:/etc/grafana/provisioning/alerting/contactpoints.yaml"
+    environment:
+      GF_DATABASE_TYPE: mysql
+      GF_DATABASE_HOST: mysql:3306
+      GF_DATABASE_NAME: grafana
+      GF_DATABASE_USER: root
+      GF_DATABASE_PASSWORD: test
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f localhost:3000/api/health && echo 'ready'"]
+      interval: 10s
+      retries: 30
+    depends_on:
+      redis:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+
+  grafana-2:
+    image: grafana/grafana-oss:dev  
+    ports:
+      - "3002:3000"
+    volumes:
+      - "./grafana-2.ini:/etc/grafana/grafana.ini"
+      - "./contactpoints.yaml:/etc/grafana/provisioning/alerting/contactpoints.yaml"
+    environment:
+      GF_DATABASE_TYPE: mysql
+      GF_DATABASE_HOST: mysql:3306
+      GF_DATABASE_NAME: grafana
+      GF_DATABASE_USER: root
+      GF_DATABASE_PASSWORD: test
+    depends_on:
+      grafana-1:
+        condition: service_healthy
+  
+  grafana-3:
+    image: grafana/grafana-oss:dev
+    ports:
+      - "3003:3000"
+    volumes:
+      - "./grafana-3.ini:/etc/grafana/grafana.ini"
+      - "./contactpoints.yaml:/etc/grafana/provisioning/alerting/contactpoints.yaml"
+    environment:
+      GF_DATABASE_TYPE: mysql
+      GF_DATABASE_HOST: mysql:3306
+      GF_DATABASE_NAME: grafana
+      GF_DATABASE_USER: root
+      GF_DATABASE_PASSWORD: test
+    depends_on:
+      grafana-1:
+        condition: service_healthy
+
+    
+
+
+

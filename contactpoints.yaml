@@ -1,0 +1,9 @@
+apiVersion: 1
+
+contactPoints:
+  - name: ha_weebhook
+    receivers:
+    - uid: 1
+      type: webhook
+      settings:
+        url: https://webhook.site/72404a9f-20b3-4288-b198-c054ff453c47
